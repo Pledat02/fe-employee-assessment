@@ -19,7 +19,171 @@ interface Employee {
   email: string;
   phone: string;
   department: string;
+  position: string;import React, { useState, useMemo } from 'react';
+import { MainLayout } from '../layouts/MainLayout'; // Adjust import path as needed
+import EmployeeManagement from '../components/EmployeeManagement';
+import DepartmentManagement from '../components/DepartmentManagement';
+import Evaluation from '../components/Evaluation';
+import Statistics from '../components/Statistics';
+import AddEditEmployeeModal from '../components/AddEditEmployeeModal';
+
+// Define interfaces consistent with AddEditEmployeeModal.tsx
+interface Department {
+  id: number;
+  name: string;
+}
+
+interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  department: string;
   position: string;
+  status: 'active' | 'inactive';
+  avatar: string;
+}
+
+const App: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'employees' | 'departments' | 'evaluation' | 'statistics'>('employees');
+  const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedEmployee, setSelectedEmployee] = useState<Partial<Employee> | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([
+    // ... (your existing employee data remains unchanged)
+    {
+      id: 'NV001',
+      name: 'Nguyễn Văn A',
+      email: 'nguyenvana@company.com',
+      phone: '0901234567',
+      department: 'Phòng Nhân sự',
+      position: 'Trưởng phòng',
+      status: 'active',
+      avatar: 'https://readdy.ai/api/search-image?query=professional%20portrait%20of%20a%20Vietnamese%20business%20man%20in%20suit%20with%20neutral%20background%2C%20professional%20headshot%2C%20high%20quality%2C%20realistic%2C%20detailed%20facial%20features&width=100&height=100&seq=1&orientation=squarish',
+    },
+    // ... (other employees)
+  ]);
+  const [departments] = useState<Department[]>([
+    { id: 1, name: 'Phòng Nhân sự' },
+    { id: 2, name: 'Phòng Kế toán' },
+    { id: 3, name: 'Phòng IT' },
+    { id: 4, name: 'Phòng Marketing' },
+    { id: 5, name: 'Phòng Kinh doanh' },
+  ]);
+
+  const filteredEmployees = useMemo(() => {
+    return employees.filter((employee) => {
+      const matchesSearch =
+        employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.id.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesDepartment = departmentFilter === 'all' || employee.department === departmentFilter;
+      const matchesStatus = statusFilter === 'all' || employee.status === statusFilter;
+      return matchesSearch && matchesDepartment && matchesStatus;
+    });
+  }, [employees, searchTerm, departmentFilter, statusFilter]);
+
+  const handleAddEmployee = () => {
+    setIsEditMode(false);
+    setSelectedEmployee({
+      id: '',
+      name: '',
+      email: '',
+      phone: '',
+      department: '',
+      position: '',
+      status: 'active',
+      avatar: '',
+    });
+    setShowAddEmployeeModal(true);
+  };
+
+  const handleEditEmployee = (employee: Employee) => {
+    setIsEditMode(true);
+    setSelectedEmployee({ ...employee });
+    setShowAddEmployeeModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowAddEmployeeModal(false);
+    setSelectedEmployee(null);
+  };
+
+  const handleSaveEmployee = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEmployee) return;
+
+    const requiredFields: (keyof Employee)[] = ['id', 'name', 'email', 'department', 'position', 'status'];
+    const isValid = requiredFields.every((field) => selectedEmployee[field]);
+    if (!isValid) {
+      alert('Vui lòng điền đầy đủ các trường bắt buộc.');
+      return;
+    }
+
+    const employee: Employee = {
+      id: selectedEmployee.id || `NV${(employees.length + 1).toString().padStart(3, '0')}`,
+      name: selectedEmployee.name || '',
+      email: selectedEmployee.email || '',
+      phone: selectedEmployee.phone || '',
+      department: selectedEmployee.department || '',
+      position: selectedEmployee.position || '',
+      status: selectedEmployee.status || 'active',
+      avatar: selectedEmployee.avatar || '',
+    };
+
+    if (isEditMode) {
+      setEmployees((prev) => prev.map((emp) => (emp.id === employee.id ? employee : emp)));
+    } else {
+      setEmployees((prev) => [...prev, employee]);
+    }
+    handleCloseModal();
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setSelectedEmployee((prev) => ({
+      ...(prev || { id: '', name: '', email: '', phone: '', department: '', position: '', status: 'active', avatar: '' }),
+      [name]: value,
+    }));
+  };
+
+  return (
+    <MainLayout activeTab={activeTab} setActiveTab={setActiveTab}>
+      {activeTab === 'employees' && (
+        <EmployeeManagement
+          employees={filteredEmployees}
+          departments={departments}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          departmentFilter={departmentFilter}
+          setDepartmentFilter={setDepartmentFilter}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          handleAddEmployee={handleAddEmployee}
+          handleEditEmployee={handleEditEmployee}
+          totalEmployees={employees.length}
+        />
+      )}
+      {activeTab === 'departments' && <DepartmentManagement departments={departments} employees={employees} />}
+      {activeTab === 'evaluation' && <Evaluation />}
+      {activeTab === 'statistics' && <Statistics />}
+      {showAddEmployeeModal && (
+        <AddEditEmployeeModal
+          isEditMode={isEditMode}
+          selectedEmployee={selectedEmployee}
+          departments={departments}
+          handleInputChange={handleInputChange}
+          handleSaveEmployee={handleSaveEmployee}
+          handleCloseModal={handleCloseModal}
+        />
+      )}
+    </MainLayout>
+  );
+};
+
+export default App;
   status: 'active' | 'inactive';
   avatar: string;
 }

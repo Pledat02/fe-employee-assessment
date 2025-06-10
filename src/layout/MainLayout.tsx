@@ -1,24 +1,24 @@
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Outlet } from 'react-router-dom';
+import Header from '../components/Header';
 
-const App: React.FC = () => {
-    const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState<'employees' | 'departments' | 'evaluation' | 'statistics'>('employees');
+// Define props interface for MainLayout
+interface MainLayoutProps {
+    activeTab: 'employees' | 'departments' | 'evaluation' | 'statistics';
+    setActiveTab: (tab: 'employees' | 'departments' | 'evaluation' | 'statistics') => void;
+}
 
-    const handleTabChange = (tab: 'employees' | 'departments' | 'evaluation' | 'statistics') => {
-        setActiveTab(tab);
-        navigate(`/${tab}`);
-    };
-
+const MainLayout: React.FC<MainLayoutProps> = ({ activeTab, setActiveTab }) => {
     return (
-        <MainLayout activeTab={activeTab} setActiveTab={handleTabChange}>
-            <Routes>
-                <Route path="/employees" element={<EmployeeManagement /* props */ />} />
-                <Route path="/departments" element={<DepartmentManagement /* props */ />} />
-                <Route path="/evaluation" element={<Evaluation />} />
-                <Route path="/statistics" element={<Statistics />} />
-                <Route path="/" element={<EmployeeManagement /* props */ />} />
-            </Routes>
-            {showAddEmployeeModal && <AddEditEmployeeModal /* props */ />}
-        </MainLayout>
+        <div className="min-h-screen bg-gray-100">
+            <Header activeTab={activeTab} setActiveTab={setActiveTab} />
+            <main className="p-6">
+                <div className="mx-auto max-w-7xl">
+                    <Outlet />
+                </div>
+            </main>
+        </div>
     );
 };
+
+export default MainLayout;
