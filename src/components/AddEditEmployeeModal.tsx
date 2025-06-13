@@ -12,7 +12,7 @@ interface Employee {
   phone?: string;
   department?: string;
   position?: string;
-  status?: 'active' | 'inactive';
+  status?: string;
   avatar?: string;
 }
 

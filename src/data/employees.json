@@ -1,0 +1,82 @@
+[
+  {
+    "id": "NV001",
+    "name": "Nguyễn Văn A",
+    "email": "nguyenvana@company.com",
+    "phone": "0901234567",
+    "department": "Phòng Nhân sự",
+    "position": "Trưởng phòng",
+    "status": "active",
+    "avatar": "https://readdy.ai/api/search-image?query=professional%20portrait%20of%20a%20Vietnamese%20business%20man%20in%20suit%20with%20neutral%20background%2C%20professional%20headshot%2C%20high%20quality%2C%20realistic%2C%20detailed%20facial%20features&width=100&height=100&seq=1&orientation=squarish"
+  },
+  {
+    "id": "NV002",
+    "name": "Trần Thị B",
+    "email": "tranthib@company.com",
+    "phone": "0912345678",
+    "department": "Phòng Kế toán",
+    "position": "Nhân viên",
+    "status": "active",
+    "avatar": "https://readdy.ai/api/search-image?query=professional%20portrait%20of%20a%20Vietnamese%20business%20woman%20with%20neutral%20background%2C%20professional%20headshot%2C%20high%20quality%2C%20realistic%2C%20detailed%20facial%20features&width=100&height=100&seq=2&orientation=squarish"
+  },
+  {
+    "id": "NV003",
+    "name": "Lê Văn C",
+    "email": "levanc@company.com",
+    "phone": "0923456789",
+    "department": "Phòng IT",
+    "position": "Lập trình viên",
+    "status": "active",
+    "avatar": "https://readdy.ai/api/search-image?query=professional%20portrait%20of%20a%20Vietnamese%20young%20man%20with%20glasses%20in%20casual%20business%20attire%2C%20neutral%20background%2C%20professional%20headshot%2C%20high%20quality&width=100&height=100&seq=3&orientation=squarish"
+  },
+  {
+    "id": "NV004",
+    "name": "Phạm Thị D",
+    "email": "phamthid@company.com",
+    "phone": "0934567890",
+    "department": "Phòng Marketing",
+    "position": "Chuyên viên",
+    "status": "inactive",
+    "avatar": "https://readdy.ai/api/search-image?query=professional%20portrait%20of%20a%20Vietnamese%20business%20woman%20with%20long%20hair%2C%20neutral%20background%2C%20professional%20headshot%2C%20high%20quality%2C%20realistic%2C%20detailed%20facial%20features&width=100&height=100&seq=4&orientation=squarish"
+  },
+  {
+    "id": "NV005",
+    "name": "Hoàng Văn E",
+    "email": "hoangvane@company.com",
+    "phone": "0945678901",
+    "department": "Phòng Kinh doanh",
+    "position": "Giám đốc kinh doanh",
+    "status": "active",
+    "avatar": "https://readdy.ai/api/search-image?query=professional%20portrait%20of%20a%20Vietnamese%20middle-aged%20business%20man%20in%20formal%20attire%2C%20neutral%20background%2C%20professional%20headshot%2C%20high%20quality%2C%20realistic&width=100&height=100&seq=5&orientation=squarish"
+  },
+  {
+    "id": "NV006",
+    "name": "Vũ Thị F",
+    "email": "vuthif@company.com",
+    "phone": "0956789012",
+    "department": "Phòng Nhân sự",
+    "position": "Nhân viên",
+    "status": "active",
+    "avatar": "https://readdy.ai/api/search-image?query=professional%20portrait%20of%20a%20Vietnamese%20young%20woman%20with%20short%20hair%20in%20business%20casual%20attire%2C%20neutral%20background%2C%20professional%20headshot%2C%20high%20quality&width=100&height=100&seq=6&orientation=squarish"
+  },
+  {
+    "id": "NV007",
+    "name": "Đặng Văn G",
+    "email": "dangvang@company.com",
+    "phone": "0967890123",
+    "department": "Phòng IT",
+    "position": "Quản lý dự án",
+    "status": "active",
+    "avatar": "https://readdy.ai/api/search-image?query=professional%20portrait%20of%20a%20Vietnamese%20business%20man%20with%20casual%20style%2C%20neutral%20background%2C%20professional%20headshot%2C%20high%20quality%2C%20realistic%2C%20detailed%20facial%20features&width=100&height=100&seq=7&orientation=squarish"
+  },
+  {
+    "id": "NV008",
+    "name": "Bùi Thị H",
+    "email": "buithih@company.com",
+    "phone": "0978901234",
+    "department": "Phòng Kế toán",
+    "position": "Kế toán trưởng",
+    "status": "inactive",
+    "avatar": "https://readdy.ai/api/search-image?query=professional%20portrait%20of%20a%20Vietnamese%20middle-aged%20business%20woman%20in%20formal%20attire%2C%20neutral%20background%2C%20professional%20headshot%2C%20high%20quality&width=100&height=100&seq=8&orientation=squarish"
+  }
+]

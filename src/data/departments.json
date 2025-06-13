@@ -1,0 +1,7 @@
+[
+  { "id": 1, "name": "Phòng Nhân sự" },
+  { "id": 2, "name": "Phòng Kế toán" },
+  { "id": 3, "name": "Phòng IT" },
+  { "id": 4, "name": "Phòng Marketing" },
+  { "id": 5, "name": "Phòng Kinh doanh" }
+]
