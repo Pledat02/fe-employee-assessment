@@ -7,7 +7,8 @@ import Evaluation from './pages/Evaluation';
 import Statistics from './pages/Statistics';
 import AddEditEmployeeModal from './components/AddEditEmployeeModal';
 import './App.css';
-import employeesData from './data/employees.json'; // Import JSON file
+import employeesData from './data/employees.json';
+import EmployeeSelfEvaluation from "./pages/EmployeeSelfEvaluation"; // Import JSON file
 
 // Define interfaces
 interface Department {
@@ -144,7 +145,8 @@ const App: React.FC = () => {
                 path="/departments"
                 element={<DepartmentManagement departments={departments} employees={employees} />}
             />
-            <Route path="/evaluation" element={<Evaluation />} />
+            <Route path="/evaluation" element={<EmployeeSelfEvaluation />} />
+            {/*<Route path="/evaluation" element={<Evaluation />} />*/}
             <Route path="/statistics" element={<Statistics />} />
           </Routes>
           {showAddEmployeeModal && (
