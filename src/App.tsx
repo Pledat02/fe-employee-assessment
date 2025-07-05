@@ -1,14 +1,38 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import Login from './pages/Login';
 import MainLayout from './layout/MainLayout';
-import EmployeeManagement from './pages/EmployeeManagement';
-import DepartmentManagement from './pages/DepartmentManagement';
+
+import EmployeeManagementNew from './pages/EmployeeManagementNew';
+import DepartmentManagementNew from './pages/DepartmentManagementNew';
 import Evaluation from './pages/Evaluation';
 import Statistics from './pages/Statistics';
-import AddEditEmployeeModal from './components/AddEditEmployeeModal';
+import EvaluationCriteriaManagement from './pages/EvaluationCriteriaManagement';
+
 import './App.css';
 import employeesData from './data/employees.json';
-import EmployeeSelfEvaluation from "./pages/EmployeeSelfEvaluation"; // Import JSON file
+
+// Types for legacy compatibility
+interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  department: string;
+  position: string;
+  status: string;
+  avatar: string;
+}
+
+interface Department {
+  id: number;
+  name: string;
+}
 
 // Define interfaces
 interface Department {
@@ -28,139 +52,68 @@ interface Employee {
 }
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'employees' | 'departments' | 'evaluation' | 'statistics'>('employees');
-  const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [departmentFilter, setDepartmentFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedEmployee, setSelectedEmployee] = useState<Partial<Employee> | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
+  // Temporarily use static data until we fully integrate the API
   const [employees, setEmployees] = useState<Employee[]>(employeesData);
+  const totalEmployees = employees.length;
+
+  // Simplified state - không cần state này nữa vì EmployeeManagementNew tự quản lý
+
+  // Static departments for now - you can create a similar hook for departments
   const [departments] = useState<Department[]>([
-    { id: 1, name: 'Phòng Nhân sự' },
-    { id: 2, name: 'Phòng Kế toán' },
-    { id: 3, name: 'Phòng IT' },
+    { id: 1, name: 'Phòng Công nghệ thông tin' },
+    { id: 2, name: 'Phòng Nhân sự' },
+    { id: 3, name: 'Phòng Kế toán' },
     { id: 4, name: 'Phòng Marketing' },
     { id: 5, name: 'Phòng Kinh doanh' },
   ]);
 
-  const filteredEmployees = useMemo(() => {
-    return employees.filter((employee) => {
-      const matchesSearch =
-          employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          employee.id.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesDepartment = departmentFilter === 'all' || employee.department === departmentFilter;
-      const matchesStatus = statusFilter === 'all' || employee.status === statusFilter;
-      return matchesSearch && matchesDepartment && matchesStatus;
-    });
-  }, [employees, searchTerm, departmentFilter, statusFilter]);
+  // Xóa filteredEmployees vì không dùng nữa
 
-  const handleAddEmployee = () => {
-    setIsEditMode(false);
-    setSelectedEmployee({
-      id: '',
-      name: '',
-      email: '',
-      phone: '',
-      department: '',
-      position: '',
-      status: 'active',
-      avatar: '',
-    });
-    setShowAddEmployeeModal(true);
-  };
-
-  const handleEditEmployee = (employee: Employee) => {
-    setIsEditMode(true);
-    setSelectedEmployee({ ...employee });
-    setShowAddEmployeeModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowAddEmployeeModal(false);
-    setSelectedEmployee(null);
-  };
-
-  const handleSaveEmployee = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedEmployee) return;
-
-    const requiredFields: (keyof Employee)[] = ['id', 'name', 'email', 'department', 'position', 'status'];
-    const isValid = requiredFields.every((field) => selectedEmployee[field]);
-    if (!isValid) {
-      alert('Vui lòng điền đầy đủ các trường bắt buộc.');
-      return;
-    }
-
-    const employee: Employee = {
-      id: selectedEmployee.id || `NV${(employees.length + 1).toString().padStart(3, '0')}`,
-      name: selectedEmployee.name || '',
-      email: selectedEmployee.email || '',
-      phone: selectedEmployee.phone || '',
-      department: selectedEmployee.department || '',
-      position: selectedEmployee.position || '',
-      status: selectedEmployee.status || 'active',
-      avatar: selectedEmployee.avatar || '',
-    };
-
-    if (isEditMode) {
-      setEmployees((prev) => prev.map((emp) => (emp.id === employee.id ? employee : emp)));
-    } else {
-      setEmployees((prev) => [...prev, employee]);
-    }
-    handleCloseModal();
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setSelectedEmployee((prev) => ({
-      ...(prev || { id: '', name: '', email: '', phone: '', department: '', position: '', status: 'active', avatar: '' }),
-      [name]: value,
-    }));
-  };
+  // Xóa các handlers cũ vì đã có EmployeeManagementNew
 
   return (
+    <AuthProvider>
       <BrowserRouter>
-        <MainLayout activeTab={activeTab} setActiveTab={setActiveTab}>
+        <>
           <Routes>
-            <Route
-                path="/"
-                element={
-                  <EmployeeManagement
-                      employees={filteredEmployees}
-                      departments={departments}
-                      searchTerm={searchTerm}
-                      setSearchTerm={setSearchTerm}
-                      departmentFilter={departmentFilter}
-                      setDepartmentFilter={setDepartmentFilter}
-                      statusFilter={statusFilter}
-                      setStatusFilter={setStatusFilter}
-                      handleAddEmployee={handleAddEmployee}
-                      handleEditEmployee={handleEditEmployee}
-                      totalEmployees={employees.length}
-                  />
-                }
-            />
-            <Route
-                path="/departments"
-                element={<DepartmentManagement departments={departments} employees={employees} />}
-            />
-            <Route path="/evaluation" element={<EmployeeSelfEvaluation />} />
-            {/*<Route path="/evaluation" element={<Evaluation />} />*/}
-            <Route path="/statistics" element={<Statistics />} />
+          {/* Public Routes */}
+          <Route path="/login" element={<Login />} />
+
+          {/* Protected Routes */}
+          <Route
+            path="/*"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Routes>
+                    <Route path="/" element={<EmployeeManagementNew />} />
+                    <Route path="/departments" element={<DepartmentManagementNew />} />
+                    <Route path="/evaluation" element={<Evaluation />} />
+                    <Route path="/statistics" element={<Statistics />} />
+                    <Route path="/criteria" element={<EvaluationCriteriaManagement />} />
+                  </Routes>
+
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
           </Routes>
-          {showAddEmployeeModal && (
-              <AddEditEmployeeModal
-                  isEditMode={isEditMode}
-                  selectedEmployee={selectedEmployee}
-                  departments={departments}
-                  handleInputChange={handleInputChange}
-                  handleSaveEmployee={handleSaveEmployee}
-                  handleCloseModal={handleCloseModal}
-              />
-          )}
-        </MainLayout>
+
+          {/* Toast Notifications */}
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+          />
+        </>
       </BrowserRouter>
+    </AuthProvider>
   );
 };
 
