@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Tab {
   id: 'employees' | 'departments' | 'evaluation' | 'statistics';
@@ -10,10 +11,28 @@ interface Tab {
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const tabs: Tab[] = [
     { id: 'employees', label: 'Quản lý nhân viên', path: '/' },
     { id: 'departments', label: 'Quản lý phòng ban', path: '/departments' },
+    { id: 'criteria', label: 'Tiêu chí & Câu hỏi', path: '/criteria' },
     { id: 'evaluation', label: 'Đánh giá nhân viên', path: '/evaluation' },
     { id: 'statistics', label: 'Thống kê đánh giá', path: '/statistics' },
   ];
@@ -26,8 +45,16 @@ const Header: React.FC = () => {
       }`;
 
   const handleUserMenuClick = () => {
-    alert('User menu functionality to be implemented (e.g., show dropdown with profile/logout)');
-    // Example: navigate('/profile') or toggle dropdown
+    setShowUserMenu(!showUserMenu);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   return (
@@ -52,19 +79,38 @@ const Header: React.FC = () => {
               </nav>
             </div>
             <div className="flex items-center">
-              <div className="relative">
+              <div className="relative" ref={menuRef}>
                 <button
-                    onClick={handleUserMenuClick}
-                    className="flex cursor-pointer rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    aria-label="Mở menu người dùng"
+                  onClick={handleUserMenuClick}
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                  aria-label="Mở menu người dùng"
                 >
                   <span className="sr-only">Mở menu người dùng</span>
-                  <img
-                      className="size-8 rounded-full"
-                      src="https://readdy.ai/api/search-image?query=professional%20portrait%20of%20a%20Vietnamese%20business%20man%20in%20suit%20with%20neutral%20background%2C%20professional%20headshot%2C%20high%20quality%2C%20realistic%2C%20detailed%20facial%20features&width=100&height=100&seq=9&orientation=squarish"
-                      alt="Ảnh đại diện người dùng"
-                  />
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
                 </button>
+
+                {/* User Dropdown Menu */}
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-900">
+                        {user?.employee?.fullName || user?.username}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {user?.role} - {user?.employee?.departmentName}
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      <i className="fas fa-sign-out-alt mr-2"></i>
+                      Đăng xuất
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
