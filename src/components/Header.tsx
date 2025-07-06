@@ -33,7 +33,7 @@ const Header: React.FC = () => {
     { id: 'employees', label: 'Quản lý nhân viên', path: '/' },
     { id: 'departments', label: 'Quản lý phòng ban', path: '/departments' },
     { id: 'cycles', label: 'Quản lý chu kì', path: '/cycles' },
-    // { id: 'evaluation-form', label: 'Quản lý chu kì', path: '/evaluation-form' },
+    { id: 'evaluation-form', label: 'Quản lý form', path: '/evaluation-form' },
     { id: 'criteria', label: 'Tiêu chí & Câu hỏi', path: '/criteria' },
     { id: 'evaluation', label: 'Đánh giá nhân viên', path: '/evaluation' },
     { id: 'statistics', label: 'Thống kê đánh giá', path: '/statistics' },
