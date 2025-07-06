@@ -16,6 +16,8 @@ import EvaluationCriteriaManagement from './pages/EvaluationCriteriaManagement';
 
 import './App.css';
 import employeesData from './data/employees.json';
+import EvaluationCycleManagement from "./pages/EvaluationCycleManagement";
+import CriteriaFormManagement from "./pages/CriteriaFormManagement";
 
 // Types for legacy compatibility
 interface Employee {
@@ -88,6 +90,8 @@ const App: React.FC = () => {
                   <Routes>
                     <Route path="/" element={<EmployeeManagementNew />} />
                     <Route path="/departments" element={<DepartmentManagementNew />} />
+                    <Route path="/cycles" element={<EvaluationCycleManagement />} />
+                    {/*<Route path="/evaluation-form" element={<CriteriaFormManagement />} />*/}
                     <Route path="/evaluation" element={<Evaluation />} />
                     <Route path="/statistics" element={<Statistics />} />
                     <Route path="/criteria" element={<EvaluationCriteriaManagement />} />
