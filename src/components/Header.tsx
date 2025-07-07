@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 interface Tab {
-  id: 'employees' | 'departments' | 'evaluation' | 'statistics';
+  id: 'employees' | 'departments' | 'evaluation' | 'statistics' | 'cycles' | 'evaluation-form'|'criteria';
   label: string;
   path: string; // Add path for navigation
 }
@@ -32,9 +32,12 @@ const Header: React.FC = () => {
   const tabs: Tab[] = [
     { id: 'employees', label: 'Quản lý nhân viên', path: '/' },
     { id: 'departments', label: 'Quản lý phòng ban', path: '/departments' },
+    { id: 'cycles', label: 'Quản lý chu kì', path: '/cycles' },
+    { id: 'evaluation-form', label: 'Quản lý form', path: '/evaluation-form' },
     { id: 'criteria', label: 'Tiêu chí & Câu hỏi', path: '/criteria' },
     { id: 'evaluation', label: 'Đánh giá nhân viên', path: '/evaluation' },
     { id: 'statistics', label: 'Thống kê đánh giá', path: '/statistics' },
+
   ];
 
   const getTabClassName = (tabPath: string) =>
@@ -82,19 +85,19 @@ const Header: React.FC = () => {
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={handleUserMenuClick}
-                  className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                  className="flex size-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   aria-label="Mở menu người dùng"
                 >
                   <span className="sr-only">Mở menu người dùng</span>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </button>
 
                 {/* User Dropdown Menu */}
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                    <div className="px-4 py-2 border-b border-gray-100">
+                  <div className="absolute right-0 z-50 mt-2 w-48 rounded-md border border-gray-200 bg-white py-1 shadow-lg">
+                    <div className="border-b border-gray-100 px-4 py-2">
                       <p className="text-sm font-medium text-gray-900">
                         {user?.employee?.fullName || user?.username}
                       </p>
@@ -104,7 +107,7 @@ const Header: React.FC = () => {
                     </div>
                     <button
                       onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
                     >
                       <i className="fas fa-sign-out-alt mr-2"></i>
                       Đăng xuất

@@ -4,7 +4,7 @@ import EvaluationTable from '../components/EvaluationTable';
 import { fetchProfileAndCycles } from '../services/ProfileService';
 import { fetchFormAndQuestions, submitEvaluation } from '../services/EvaluationService';
 import {Profile, EvaluationCycle, CriteriaForm, Criteria, Question, Score, Comment, User} from '../types';
-import EvaluationCycleSelector from "../components/EvaluationCycleSelectorProps";
+import EvaluationCycleSelector from "../components/EvaluationCycleFormModal";
 
 const EmployeeSelfEvaluation: React.FC = () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}') as User;
