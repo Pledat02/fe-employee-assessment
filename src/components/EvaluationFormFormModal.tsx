@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { CriteriaFormResponse, CriteriaFormCreateRequest } from '../services/criteriaFormService';
 import { evaluationCriteriaService } from '../services/evaluationCriteriaService';
+import { evaluationCycleService } from '../services/evaluationCycleService'; // Hypothetical service for fetching cycles
 
 interface CriteriaFormModalProps {
     isOpen: boolean;
     isEditMode: boolean;
-    form?: CriteriaFormResponse | null;
+    criteriaForm: CriteriaFormResponse | null;
+    cycleId: number;
     onClose: () => void;
     onSave: (data: CriteriaFormCreateRequest) => Promise<void>;
 }
@@ -14,50 +16,69 @@ interface CriteriaFormModalProps {
 const CriteriaFormModal: React.FC<CriteriaFormModalProps> = ({
                                                                  isOpen,
                                                                  isEditMode,
-                                                                 form,
+                                                                 criteriaForm,
+                                                                 cycleId,
                                                                  onClose,
                                                                  onSave,
                                                              }) => {
     const [loading, setLoading] = useState(false);
+    const [criteriaLoading, setCriteriaLoading] = useState(false);
     const [formData, setFormData] = useState<CriteriaFormCreateRequest>({
         criteriaFormName: '',
-        evaluationCycleId: '',
+        evaluationCycleId: String(cycleId), // Prefill with cycleId
         evaluationCriteriaIds: [],
     });
     const [availableCriteria, setAvailableCriteria] = useState<{ id: number; name: string }[]>([]);
+    const [availableCycles, setAvailableCycles] = useState<{ id: string; name: string }[]>([]);
     const [selectedCriteriaIds, setSelectedCriteriaIds] = useState<number[]>([]);
 
     useEffect(() => {
         if (isOpen) {
+            // Fetch evaluation cycles
+            const fetchCycles = async () => {
+                try {
+                    const cycles = await evaluationCycleService.getAllEvaluationCycles(); // Hypothetical method
+                    setAvailableCycles(cycles.map(c => ({ id: String(c.evaluationCycleId), name: `${c.startDate} - ${c.endDate}` })));
+                } catch (error) {
+                    toast.error('Không thể tải danh sách chu kỳ đánh giá');
+                }
+            };
+
+            // Fetch evaluation criteria
             const fetchCriteria = async () => {
                 try {
+                    setCriteriaLoading(true);
                     const criteriaList = await evaluationCriteriaService.getAllEvaluationCriteria();
                     setAvailableCriteria(criteriaList.map(c => ({ id: c.evaluationCriteriaId, name: c.criteriaName })));
                 } catch (error) {
                     toast.error('Không thể tải danh sách tiêu chí đánh giá');
+                } finally {
+                    setCriteriaLoading(false);
                 }
             };
+
+            fetchCycles();
             fetchCriteria();
 
-            if (isEditMode && form) {
+            if (isEditMode && criteriaForm) {
                 setFormData({
-                    criteriaFormName: form.criteriaFormName,
-                    evaluationCycleId: form.evaluationCycleId,
-                    evaluationCriteriaIds: form.evaluationCriteria?.map(c => c.evaluationCriteriaId) || [],
+                    criteriaFormName: criteriaForm.criteriaFormName,
+                    evaluationCycleId: criteriaForm.evaluationCycleId,
+                    evaluationCriteriaIds: criteriaForm.evaluationCriteria?.map(c => c.evaluationCriteriaId) || [],
                 });
-                setSelectedCriteriaIds(form.evaluationCriteria?.map(c => c.evaluationCriteriaId) || []);
+                setSelectedCriteriaIds(criteriaForm.evaluationCriteria?.map(c => c.evaluationCriteriaId) || []);
             } else {
                 setFormData({
                     criteriaFormName: '',
-                    evaluationCycleId: '',
+                    evaluationCycleId: String(cycleId), // Use provided cycleId
                     evaluationCriteriaIds: [],
                 });
                 setSelectedCriteriaIds([]);
             }
         }
-    }, [isOpen, isEditMode, form]);
+    }, [isOpen, isEditMode, criteriaForm, cycleId]);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
@@ -85,7 +106,11 @@ const CriteriaFormModal: React.FC<CriteriaFormModalProps> = ({
             return;
         }
         if (!formData.evaluationCycleId.trim()) {
-            toast.error('Vui lòng nhập mã chu kỳ đánh giá');
+            toast.error('Vui lòng chọn chu kỳ đánh giá');
+            return;
+        }
+        if (!availableCycles.some(cycle => cycle.id === formData.evaluationCycleId)) {
+            toast.error('Chu kỳ đánh giá không hợp lệ');
             return;
         }
         if (formData.evaluationCriteriaIds.length === 0) {
@@ -108,7 +133,7 @@ const CriteriaFormModal: React.FC<CriteriaFormModalProps> = ({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6">
+            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
                 <div className="mb-6 flex items-center justify-between">
                     <h3 className="text-xl font-semibold text-gray-900">
                         {isEditMode ? 'Sửa biểu mẫu tiêu chí' : 'Thêm biểu mẫu tiêu chí mới'}
@@ -129,29 +154,44 @@ const CriteriaFormModal: React.FC<CriteriaFormModalProps> = ({
                             value={formData.criteriaFormName}
                             onChange={handleInputChange}
                             className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Nhập tên biểu mẫu"
+                            placeholder="Nhập tên biểu mẫu (VD: Biểu mẫu đánh giá Q1)"
                             required
                         />
                         <p className="mt-1 text-xs text-gray-500">Ví dụ: Biểu mẫu đánh giá Q1, Biểu mẫu nhân viên mới</p>
                     </div>
 
                     <div>
-                        <label className="mb-2 block text-sm font-medium text-gray-700">Mã chu kỳ đánh giá *</label>
-                        <input
-                            type="text"
+                        <label className="mb-2 block text-sm font-medium text-gray-700">Chu kỳ đánh giá *</label>
+                        <select
                             name="evaluationCycleId"
                             value={formData.evaluationCycleId}
                             onChange={handleInputChange}
-                            className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Nhập mã chu kỳ (VD: Q1-2025)"
+                            disabled={isEditMode || !!cycleId} // Disable if in edit mode or cycleId is provided
+                            className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                             required
-                        />
+                        >
+                            <option value="">Chọn chu kỳ</option>
+                            {availableCycles.map(cycle => (
+                                <option key={cycle.id} value={cycle.id}>
+                                    {cycle.name}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="mt-1 text-xs text-gray-500">Chọn chu kỳ đánh giá liên kết với biểu mẫu</p>
                     </div>
 
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">Tiêu chí đánh giá *</label>
                         <div className="max-h-64 overflow-y-auto rounded-md border border-gray-200 p-4">
-                            {availableCriteria.length === 0 ? (
+                            {criteriaLoading ? (
+                                <div className="flex items-center justify-center py-4">
+                                    <svg className="size-5 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span className="ml-2 text-sm text-gray-600">Đang tải tiêu chí...</span>
+                                </div>
+                            ) : availableCriteria.length === 0 ? (
                                 <p className="text-sm text-gray-500">Không có tiêu chí nào để chọn</p>
                             ) : (
                                 availableCriteria.map(criteria => (
@@ -193,29 +233,29 @@ const CriteriaFormModal: React.FC<CriteriaFormModalProps> = ({
                         </div>
                     </div>
 
-                    {isEditMode && form && (
+                    {isEditMode && criteriaForm && (
                         <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
                             <h4 className="mb-3 text-sm font-medium text-gray-900">Thông tin hiện tại</h4>
                             <div className="space-y-3 text-sm text-gray-600">
-                                <p><span className="font-medium">ID biểu mẫu:</span> {form.criteriaFormId}</p>
-                                <p><span className="font-medium">Số tiêu chí:</span> {form.evaluationCriteria?.length || 0}</p>
+                                <p><span className="font-medium">ID biểu mẫu:</span> {criteriaForm.criteriaFormId}</p>
+                                <p><span className="font-medium">Số tiêu chí:</span> {criteriaForm.evaluationCriteria?.length || 0}</p>
                             </div>
                         </div>
                     )}
 
-                    <div className="sticky bottom-0 flex justify-end space-x-3 border-t border-gray-200 bg-white pt-4">
+                    <div className="sticky bottom-0 -mx-6 -mb-6 flex justify-end space-x-3 border-t border-gray-200 bg-white px-6 py-4">
                         <button
                             type="button"
                             onClick={onClose}
                             disabled={loading}
-                            className="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                         >
                             Hủy
                         </button>
                         <button
                             type="submit"
-                            disabled={loading}
-                            className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+                            disabled={loading || criteriaLoading}
+                            className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                         >
                             {loading && (
                                 <svg className="size-4 animate-spin" fill="none" viewBox="0 0 24 24">
