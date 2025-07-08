@@ -130,7 +130,7 @@ class CriteriaFormService {
         }
     }
 
-    async getCriteriaFormsByEvaluationCycleId(evaluationCycleId: string): Promise<CriteriaFormResponse[]> {
+    async getCriteriaFormsByEvaluationCycleId(evaluationCycleId: number): Promise<CriteriaFormResponse[]> {
         try {
             const response = await axios.get<ApiResponse<CriteriaFormResponse[]>>(
                 `${API_BASE_URL}/criteria-forms/evaluation-cycle/${encodeURIComponent(evaluationCycleId)}`
