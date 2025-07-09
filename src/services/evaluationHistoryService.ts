@@ -1,150 +1,265 @@
-﻿import { EvaluationHistoryItem, calculateSentiment } from '../types/evaluationHistory';
+﻿import { EvaluationHistoryItem, CriteriaChartData, CycleStatistics } from '../types/evaluationHistory';
+import axios from 'axios';
 
-// Mock data cho lịch sử đánh giá
-export const mockEvaluationHistory: EvaluationHistoryItem[] = [
-  {
-    id: 1,
-    assessmentItems: [
-      { questionId: 1, employeeScore: 4, supervisorScore: 4, managerScore: 5, totalScore: 13 },
-      { questionId: 2, employeeScore: 5, supervisorScore: 4, managerScore: 4, totalScore: 13 },
-      { questionId: 3, employeeScore: 3, supervisorScore: 4, managerScore: 4, totalScore: 11 },
-    ],
-    assessorId: 1,
-    comment: 'Nhân viên có tiến bộ rõ rệt trong quý này',
-    employeeId: 101,
-    formId: 1,
-    employeeName: 'Nguyễn Văn An',
-    departmentName: 'Phòng IT',
-    formName: 'Form đánh giá Q4 2024',
-    cycleName: 'Chu kì đánh giá cuối năm 2024',
-    createdAt: '2024-12-15T10:30:00Z',
-    updatedAt: '2024-12-15T14:20:00Z',
-    status: 'COMPLETED',
-    averageScore: 4.1,
-    totalQuestions: 3,
-    completedQuestions: 3,
-    ...calculateSentiment(4.1)
-  },
-  {
-    id: 2,
-    assessmentItems: [
-      { questionId: 1, employeeScore: 5, supervisorScore: 5, managerScore: 5, totalScore: 15 },
-      { questionId: 2, employeeScore: 4, supervisorScore: 5, managerScore: 5, totalScore: 14 },
-      { questionId: 3, employeeScore: 5, supervisorScore: 4, managerScore: 5, totalScore: 14 },
-    ],
-    assessorId: 2,
-    comment: 'Xuất sắc! Nhân viên đạt mọi mục tiêu đề ra',
-    employeeId: 102,
-    formId: 1,
-    employeeName: 'Trần Thị Bình',
-    departmentName: 'Phòng Marketing',
-    formName: 'Form đánh giá Q4 2024',
-    cycleName: 'Chu kì đánh giá cuối năm 2024',
-    createdAt: '2024-12-14T09:15:00Z',
-    updatedAt: '2024-12-14T16:45:00Z',
-    status: 'COMPLETED',
-    averageScore: 4.8,
-    totalQuestions: 3,
-    completedQuestions: 3,
-    ...calculateSentiment(4.8)
-  },
-  {
-    id: 3,
-    assessmentItems: [
-      { questionId: 1, employeeScore: 3, supervisorScore: 3, managerScore: 3, totalScore: 9 },
-      { questionId: 2, employeeScore: 2, supervisorScore: 3, managerScore: 2, totalScore: 7 },
-    ],
-    assessorId: 1,
-    comment: 'Cần cải thiện kỹ năng giao tiếp và làm việc nhóm',
-    employeeId: 103,
-    formId: 2,
-    employeeName: 'Lê Văn Cường',
-    departmentName: 'Phòng Kế toán',
-    formName: 'Form đánh giá Q3 2024',
-    cycleName: 'Chu kì đánh giá giữa năm 2024',
-    createdAt: '2024-09-20T11:00:00Z',
-    updatedAt: '2024-09-22T10:30:00Z',
-    status: 'IN_PROGRESS',
-    averageScore: 2.7,
-    totalQuestions: 3,
-    completedQuestions: 2,
-    ...calculateSentiment(2.7)
-  },
-  {
-    id: 4,
-    assessmentItems: [
-      { questionId: 1, employeeScore: 1, supervisorScore: 2, managerScore: 2, totalScore: 5 },
-      { questionId: 2, employeeScore: 2, supervisorScore: 2, managerScore: 1, totalScore: 5 },
-      { questionId: 3, employeeScore: 2, supervisorScore: 1, managerScore: 2, totalScore: 5 },
-    ],
-    assessorId: 3,
-    comment: 'Hiệu suất làm việc chưa đạt yêu cầu, cần có kế hoạch cải thiện',
-    employeeId: 104,
-    formId: 2,
-    employeeName: 'Phạm Thị Dung',
-    departmentName: 'Phòng Nhân sự',
-    formName: 'Form đánh giá Q3 2024',
-    cycleName: 'Chu kì đánh giá giữa năm 2024',
-    createdAt: '2024-09-18T14:20:00Z',
-    updatedAt: '2024-09-25T09:15:00Z',
-    status: 'COMPLETED',
-    averageScore: 1.7,
-    totalQuestions: 3,
-    completedQuestions: 3,
-    ...calculateSentiment(1.7)
-  },
-  {
-    id: 5,
-    assessmentItems: [],
-    assessorId: 1,
-    comment: '',
-    employeeId: 105,
-    formId: 3,
-    employeeName: 'Hoàng Văn Em',
-    departmentName: 'Phòng IT',
-    formName: 'Form đánh giá Q1 2025',
-    cycleName: 'Chu kì đánh giá đầu năm 2025',
-    createdAt: '2025-01-05T08:00:00Z',
-    updatedAt: '2025-01-05T08:00:00Z',
-    status: 'PENDING',
-    averageScore: 0,
-    totalQuestions: 5,
-    completedQuestions: 0,
-    ...calculateSentiment(0)
-  }
-];
+// Base URL for API
+const API_BASE_URL = 'http://localhost:8080/api';
 
-// Mock service để lấy dữ liệu
+// API Response interface
+interface ApiResponse<T> {
+  code: number;
+  message: string;
+  result: T;
+}
+
+// Page Response interface
+interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+}
+
+// Interface cho chu kỳ đánh giá
+export interface EvaluationCycle {
+  id: number;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+}
+
+// Interface cho filter
+export interface EvaluationHistoryFilter {
+  sentiment?: string;
+  status?: string;
+  employeeName?: string;
+  cycleId?: number;
+  cycleName?: string;
+  employeeId?: number; // Thêm filter theo employeeId cho role EMPLOYEE
+}
+
+// Service để lấy dữ liệu từ API
 export class EvaluationHistoryService {
-  static async getEvaluationHistory(filters?: any): Promise<EvaluationHistoryItem[]> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    let filteredData = [...mockEvaluationHistory];
-    
-    // Apply filters
-    if (filters?.sentiment) {
-      filteredData = filteredData.filter(item => item.sentiment === filters.sentiment);
-    }
-    
-    if (filters?.status) {
-      filteredData = filteredData.filter(item => item.status === filters.status);
-    }
-    
-    if (filters?.employeeName) {
-      filteredData = filteredData.filter(item => 
-        item.employeeName.toLowerCase().includes(filters.employeeName.toLowerCase())
-      );
-    }
-    
-    // Sort by date (newest first)
-    filteredData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    
-    return filteredData;
+  // Helper method để lấy token
+  private static getAuthToken(): string {
+    const token = localStorage.getItem('token') || '';
+    console.log('🔑 Auth Token:', token ? `${token.substring(0, 20)}...` : 'No token found');
+    return token;
   }
+
+  // Helper method để tạo headers
+  private static getAuthHeaders() {
+    const token = this.getAuthToken();
+    const headers = {
+      'Authorization': token ? `Bearer ${token}` : '',
+      'Content-Type': 'application/json'
+    };
+    console.log('📋 Request Headers:', {
+      ...headers,
+      'Authorization': headers.Authorization ? `Bearer ${token.substring(0, 20)}...` : 'No auth'
+    });
+    return headers;
+  }
+
+  // Helper method để check nếu API available
+  private static async isApiAvailable(): Promise<boolean> {
+    try {
+      console.log('🔍 Testing API availability...');
+      const response = await axios.get(`${API_BASE_URL}/evaluation-history/cycles`, {
+        headers: this.getAuthHeaders(),
+        timeout: 5000
+      });
+      console.log('✅ API is available:', response.status);
+      return response.status === 200;
+    } catch (error: any) {
+      console.log('❌ API not available:', error.message);
+      console.log('Error details:', error.response?.status, error.response?.data);
+      return false;
+    }
+  }
+
+  // Public method để test API
+  static async testApiConnection(): Promise<{ success: boolean; message: string; details?: any }> {
+    try {
+      console.log('🧪 Testing API connection...');
+      const url = `${API_BASE_URL}/evaluation-history/cycles`;
+      const headers = this.getAuthHeaders();
+
+      console.log('Test URL:', url);
+      console.log('Test Headers:', headers);
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000
+      });
+
+      return {
+        success: true,
+        message: `API connection successful (${response.status})`,
+        details: {
+          status: response.status,
+          data: response.data
+        }
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: `API connection failed: ${error.message}`,
+        details: {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message
+        }
+      };
+    }
+  }
+
+  static async getEvaluationHistory(filters?: EvaluationHistoryFilter): Promise<EvaluationHistoryItem[]> {
+    try {
+      const params = new URLSearchParams();
+
+      if (filters?.sentiment) params.append('sentiment', filters.sentiment);
+      if (filters?.status) params.append('status', filters.status);
+      if (filters?.employeeName) params.append('employeeName', filters.employeeName);
+      if (filters?.cycleName) params.append('cycleName', filters.cycleName);
+      if (filters?.employeeId) params.append('employeeId', filters.employeeId.toString());
+      if (filters?.cycleId) params.append('cycleId', filters.cycleId.toString());
+
+      // Pagination params
+      params.append('page', '0');
+      params.append('size', '100'); // Lấy nhiều để hiển thị tất cả
+      params.append('sort', 'createdAt');
+      params.append('direction', 'desc');
+
+      const url = `${API_BASE_URL}/evaluation-history?${params.toString()}`;
+      const headers = this.getAuthHeaders();
+
+      console.log('🚀 API Call Details:');
+      console.log('URL:', url);
+      console.log('Headers:', headers);
+      console.log('Filters:', filters);
+
+      const response = await axios.get<ApiResponse<PageResponse<EvaluationHistoryItem>>>(
+        url,
+        {
+          headers,
+          timeout: 10000 // 10 second timeout
+        }
+      );
+
+      console.log('✅ API Response Success:', response.status);
+      console.log('Response Data:', response.data);
+
+      if (response.data && response.data.result && response.data.result.content) {
+        console.log(`📊 Found ${response.data.result.content.length} evaluation history items`);
+        return response.data.result.content;
+      } else {
+        console.warn('⚠️ API response format unexpected:', response.data);
+        return [];
+      }
+    } catch (error: any) {
+      console.error('❌ API Error Details:');
+      console.error('Error message:', error.message);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error headers:', error.response?.headers);
+
+      // Throw error instead of fallback to mock data
+      throw new Error(`API call failed: ${error.message}`);
+    }
+  }
+
+
   
   static async getEvaluationDetail(id: number): Promise<EvaluationHistoryItem | null> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return mockEvaluationHistory.find(item => item.id === id) || null;
+    try {
+      console.log('🚀 Getting evaluation detail for ID:', id);
+      const response = await axios.get<ApiResponse<EvaluationHistoryItem>>(
+        `${API_BASE_URL}/evaluation-history/${id}`,
+        { headers: this.getAuthHeaders() }
+      );
+      console.log('✅ Evaluation detail response:', response.data);
+      return response.data.result;
+    } catch (error: any) {
+      console.error('❌ Error fetching evaluation detail:', error.message);
+      throw new Error(`Failed to fetch evaluation detail: ${error.message}`);
+    }
+  }
+
+  // Lấy danh sách chu kỳ duy nhất từ lịch sử đánh giá
+  static async getUniqueCycles(): Promise<string[]> {
+    try {
+      const url = `${API_BASE_URL}/evaluation-history/cycles`;
+      const headers = this.getAuthHeaders();
+      const response = await axios.get<ApiResponse<string[]>>(
+        url,
+        {
+          headers,
+          timeout: 10000
+        }
+      );
+
+      console.log('✅ Cycles API Response:', response.status);
+      console.log('Cycles Data:', response.data);
+
+      if (response.data && response.data.result) {
+        console.log(`Found ${response.data.result.length} cycles`);
+        return response.data.result;
+      } else {
+        console.warn('Cycles API response format unexpected');
+        return [];
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching cycles:', error.message);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      throw new Error(`Failed to fetch cycles: ${error.message}`);
+    }
+  }
+
+  // Tạo dữ liệu biểu đồ cho chu kỳ
+  static async getCycleChartData(cycleName: string): Promise<CriteriaChartData[]> {
+    try {
+      console.log('Fetching chart data for cycle:', cycleName);
+      const response = await axios.get<ApiResponse<CriteriaChartData[]>>(
+        `${API_BASE_URL}/evaluation-history/criteria-chart/${encodeURIComponent(cycleName)}`,
+        { headers: this.getAuthHeaders() }
+      );
+      console.log('Chart data API response:', response.data);
+
+      // Convert API response format to frontend format if needed
+      const apiData = response.data.result;
+      return apiData.map(item => ({
+        criteriaName: item.criteriaName,
+        averageScore: item.averageScore,
+        employeeScore: item.employeeScore,
+        supervisorScore: item.supervisorScore,
+        managerScore: item.managerScore,
+        color: item.color
+      }));
+    } catch (error: any) {
+      console.error('Error fetching cycle chart data:', error.message);
+      throw new Error(`Failed to fetch chart data: ${error.message}`);
+    }
+  }
+
+
+  // Lấy thống kê chu kỳ
+  static async getCycleStatistics(cycleName: string): Promise<CycleStatistics> {
+    try {
+      console.log('Fetching statistics for cycle:', cycleName);
+      const response = await axios.get<ApiResponse<CycleStatistics>>(
+        `${API_BASE_URL}/evaluation-history/statistics/${encodeURIComponent(cycleName)}`,
+        { headers: this.getAuthHeaders() }
+      );
+      console.log('Statistics API response:', response.data);
+      return response.data.result;
+    } catch (error: any) {
+      console.error('Error fetching cycle statistics:', error.message);
+      throw new Error(`Failed to fetch statistics: ${error.message}`);
+    }
   }
 }
