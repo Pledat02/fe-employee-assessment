@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from "axios";
 import EvaluationChart from "./EvaluationChart";
+import { evaluationCycleService, EvaluationCycleResponse } from "../services/evaluationCycleService";
 
 interface EvaluationStatisticsResponse {
     totalEmployees: number;
@@ -23,26 +24,55 @@ interface TopEmployee {
 const Statistics: React.FC = () => {
     const [stats, setStats] = useState<EvaluationStatisticsResponse | null>(null);
     const [topEmployees, setTopEmployees] = useState<TopEmployee[]>([]);
+    const [evaluationCycles, setEvaluationCycles] = useState<EvaluationCycleResponse[]>([]);
+    const [selectedCycleId, setSelectedCycleId] = useState<number | null>(1);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchCycles = async () => {
             try {
+                const cycles = await evaluationCycleService.getAllEvaluationCycles();
+                setEvaluationCycles(cycles);
+                if (cycles.length > 0) {
+                    setSelectedCycleId(cycles[0].evaluationCycleId); // Default to first active cycle
+                }
+            } catch (error) {
+                console.error('Lỗi khi tải danh sách chu kỳ đánh giá:', error);
+            }
+        };
+
+        fetchCycles();
+    }, []);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            if (!selectedCycleId) return;
+            setLoading(true);
+            try {
+                const token = localStorage.getItem("token");
                 const [overviewRes, topEmpRes] = await Promise.all([
-                    axios.get('http://localhost:8080/api/admin/statistics/overview'),
-                    axios.get('http://localhost:8080/api/admin/statistics/top-employees'),
+                    axios.get('http://localhost:8080/api/admin/statistics/overview', {
+                        headers: { Authorization: `Bearer ${token}` },
+                        params: { cycleId: selectedCycleId }
+                    }),
+                    axios.get('http://localhost:8080/api/admin/statistics/top-employees', {
+                        headers: { Authorization: `Bearer ${token}` },
+                        params: { cycleId: selectedCycleId }
+                    }),
                 ]);
                 setStats(overviewRes.data);
                 setTopEmployees(topEmpRes.data);
             } catch (error) {
                 console.error('Lỗi khi tải dữ liệu thống kê:', error);
+                setStats(null);
+                setTopEmployees([]);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchData();
-    }, []);
+    }, [selectedCycleId]);
 
     if (loading || !stats) {
         return (
@@ -67,18 +97,17 @@ const Statistics: React.FC = () => {
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                         <h2 className="text-lg font-medium text-gray-900">Thống kê đánh giá</h2>
                         <div className="mt-4 flex flex-col space-y-2 md:mt-0 md:flex-row md:space-x-4 md:space-y-0">
-                            <select className="rounded-button block w-full cursor-pointer border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm md:w-auto">
-                                <option>Quý 2/2025</option>
-                                <option>Quý 1/2025</option>
-                                <option>Năm 2024</option>
-                            </select>
-                            <select className="rounded-button block w-full cursor-pointer border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm md:w-auto">
-                                <option>Tất cả phòng ban</option>
-                                <option>Phòng Nhân sự</option>
-                                <option>Phòng IT</option>
-                                <option>Phòng Kế toán</option>
-                                <option>Phòng Marketing</option>
-                                <option>Phòng Kinh doanh</option>
+                            <select
+                                value={selectedCycleId || ""}
+                                onChange={(e) => setSelectedCycleId(Number(e.target.value))}
+                                className="rounded-button block w-full cursor-pointer border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm md:w-auto"
+                            >
+                                <option value="">-- Chọn chu kỳ --</option>
+                                {evaluationCycles.map((cycle) => (
+                                    <option key={cycle.evaluationCycleId} value={cycle.evaluationCycleId}>
+                                        {`Chu kỳ ${cycle.evaluationCycleId} (${cycle.startDate} - ${cycle.endDate})`}
+                                    </option>
+                                ))}
                             </select>
                             <button className="rounded-button inline-flex cursor-pointer items-center whitespace-nowrap border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                                 <i className="fas fa-download mr-2"></i>
@@ -132,7 +161,7 @@ const Statistics: React.FC = () => {
                     </div>
 
                     {/* Biểu đồ hiệu suất */}
-                    <EvaluationChart/>
+                    <EvaluationChart cycleId={selectedCycleId} />
 
                     {/* Bảng top nhân viên */}
                     {topEmployees.length > 0 ? (
@@ -142,24 +171,12 @@ const Statistics: React.FC = () => {
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Xếp
-                                            hạng
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Nhân
-                                            viên
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Phòng
-                                            ban
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Điểm
-                                            trung bình
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Xếp
-                                            loại
-                                        </th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">So
-                                            với kỳ trước
-                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Xếp hạng</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Nhân viên</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Phòng ban</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Điểm trung bình</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Xếp loại</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">So với kỳ trước</th>
                                     </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200 bg-white">
@@ -180,8 +197,7 @@ const Statistics: React.FC = () => {
                                             <td className="whitespace-nowrap px-6 py-4">
                                                 <div className="flex items-center">
                                                     <div className="ml-4">
-                                                        <div
-                                                            className="text-sm font-medium text-gray-900">{emp.fullName}</div>
+                                                        <div className="text-sm font-medium text-gray-900">{emp.fullName}</div>
                                                         <div className="text-sm text-gray-500">{emp.position}</div>
                                                     </div>
                                                 </div>
@@ -189,24 +205,23 @@ const Statistics: React.FC = () => {
                                             <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{emp.department}</td>
                                             <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{emp.averageScore.toFixed(1)}</td>
                                             <td className="whitespace-nowrap px-6 py-4">
-                                            <span
-                                                className="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold text-green-800">
-                                                {emp.classification}
-                                            </span>
+                                                <span className="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold text-green-800">
+                                                    {emp.classification}
+                                                </span>
                                             </td>
                                             <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                                                 {emp.scoreDiffFromLast > 0 ? (
                                                     <span className="text-green-600">
-                                                    <i className="fas fa-arrow-up mr-1"></i>{emp.scoreDiffFromLast.toFixed(1)}
-                                                </span>
+                                                        <i className="fas fa-arrow-up mr-1"></i>{emp.scoreDiffFromLast.toFixed(1)}
+                                                    </span>
                                                 ) : emp.scoreDiffFromLast < 0 ? (
                                                     <span className="text-red-600">
-                                                    <i className="fas fa-arrow-down mr-1"></i>{Math.abs(emp.scoreDiffFromLast).toFixed(1)}
-                                                </span>
+                                                        <i className="fas fa-arrow-down mr-1"></i>{Math.abs(emp.scoreDiffFromLast).toFixed(1)}
+                                                    </span>
                                                 ) : (
                                                     <span className="text-gray-500">
-                                                    <i className="fas fa-minus mr-1"></i>0.0
-                                                </span>
+                                                        <i className="fas fa-minus mr-1"></i>0.0
+                                                    </span>
                                                 )}
                                             </td>
                                         </tr>
@@ -216,8 +231,7 @@ const Statistics: React.FC = () => {
                             </div>
                         </div>
                     ) : (
-                        <p className="italic text-gray-600">Chưa có dữ liệu nhân viên xuất sắc trong kỳ đánh giá hiện
-                            tại.</p>
+                        <p className="italic text-gray-600">Chưa có dữ liệu nhân viên xuất sắc trong kỳ đánh giá hiện tại.</p>
                     )}
                 </div>
             </div>
