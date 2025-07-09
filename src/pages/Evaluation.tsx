@@ -75,7 +75,7 @@ const EvaluationForm: React.FC = () => {
       const selectedEmployeeData = employees.find((emp: EmployeeResponse) => emp.code === selectedEmployee);
       if (selectedEmployeeData) {
         const isSameDepartment = selectedEmployeeData.department.departmentName === assessor.departmentName;
-        const isSelfEvaluation = selectedEmployeeData.code === assessor.id && assessor.role === 'EMPLOYEE';
+        const isSelfEvaluation = selectedEmployeeData.code === assessor.id;
         setHasPermission(isSelfEvaluation || (['SUPERVISOR', 'MANAGER'].includes(assessor.role) && isSameDepartment));
       } else {
         setHasPermission(false);
@@ -339,7 +339,7 @@ const EvaluationForm: React.FC = () => {
                                               handleScoreChange(criterion.criteriaId, item.questionId, Number(e.target.value), 'EMPLOYEE')
                                           }
                                           className="w-20 rounded-md border border-gray-300 px-2 py-1 text-center text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                          disabled={isLoading || assessor.role !== 'EMPLOYEE'}
+                                          disabled={isLoading || !hasPermission}
                                       />
                                     </td>
                                     <td className="px-6 py-4 text-center">
