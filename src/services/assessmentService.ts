@@ -25,6 +25,7 @@ export interface SummaryAssessmentResponse {
     assessorId: number;
     comment?: string;
     employeeId: number;
+    sentiment: string
     formId: number;
 }
 

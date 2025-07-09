@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { evaluationService, AssessmentRequest, AssessmentItem } from '../services/assessmentService';
-import { employeeService, EmployeeResponse } from '../services/employeeService';
-import { evaluationCycleService, EvaluationCycleResponse } from '../services/evaluationCycleService';
-import { criteriaFormService, CriteriaFormResponse } from '../services/criteriaFormService';
-import { evaluationQuestionService, EvaluationQuestionResponse } from '../services/evaluationQuestionService';
+import { evaluationQuestionService } from '../services/evaluationQuestionService';
+import SentimentLabel from '../components/SentimentLabel';
+
+type SentimentType = 'Tốt' | 'Tung bình' | 'Cưa tốt';
 
 interface CriterionItem {
   questionId: number;
@@ -21,129 +22,57 @@ interface Criterion {
   items: CriterionItem[];
 }
 
-interface User {
+interface Assessor {
   id: number;
-  username: string;
+  fullName: string;
   role: 'EMPLOYEE' | 'SUPERVISOR' | 'MANAGER';
-  status: string;
-  employee: {
-    code: number;
-    fullName: string;
-    departmentName: string;
-    staffType: string;
-  };
+  departmentName: string;
 }
 
-const Evaluation: React.FC = () => {
-  // Selection states
-  const [cycles, setCycles] = useState<EvaluationCycleResponse[]>([]);
-  const [selectedCycle, setSelectedCycle] = useState<number | null>(null);
-  const [employees, setEmployees] = useState<EmployeeResponse[]>([]);
-  const [selectedEmployee, setSelectedEmployee] = useState<number | null>(null);
-  const [forms, setForms] = useState<CriteriaFormResponse[]>([]);
-  const [selectedForm, setSelectedForm] = useState<number | null>(null);
-  const [selectionError, setSelectionError] = useState<string | null>(null);
-  const [isSelectionLoading, setIsSelectionLoading] = useState<boolean>(false);
+interface EmployeeResponse {
+  code: number;
+  fullName: string;
+  department: { departmentName: string };
+  division?: string;
+}
 
-  // Evaluation states
+interface EvaluationCycleResponse {
+  evaluationCycleId: number;
+  startDate: string;
+  endDate: string;
+  department?: { departmentName: string };
+}
+
+interface CriteriaFormResponse {
+  criteriaFormId: number;
+  criteriaFormName: string;
+  evaluationCriteria: Array<{ evaluationCriteriaId: number; criteriaName: string }>;
+}
+
+const EvaluationForm: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const {
+    selectedCycle,
+    selectedForm,
+    selectedEmployee,
+    assessor,
+    employees,
+    cycles,
+    forms,
+  } = location.state || {};
+
+  const [sentiment, setSentiment] = useState<SentimentType | null>(null);
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [comments, setComments] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [assessor, setAssessor] = useState<{
-    id: number;
-    fullName: string;
-    role: 'EMPLOYEE' | 'SUPERVISOR' | 'MANAGER';
-    departmentName: string
-  } | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean>(true);
-
-  // Fetch cycles and assessor on mount
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      setIsSelectionLoading(true);
-      setSelectionError(null);
-      try {
-        // Parse user from localStorage
-        const userData = localStorage.getItem('user_info');
-        if (!userData) {
-          throw new Error('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
-        }
-        const user: User = JSON.parse(userData);
-        if (!user.id || !user.employee?.fullName || !['EMPLOYEE', 'SUPERVISOR', 'MANAGER'].includes(user.role)) {
-          throw new Error('Thông tin người dùng không hợp lệ hoặc vai trò không được hỗ trợ.');
-        }
-        setAssessor({
-          id: user.id,
-          fullName: user.employee.fullName,
-          role: user.role,
-          departmentName: user.employee.departmentName
-        });
-
-        // Fetch cycles
-        const cycleResponse = await evaluationCycleService.getActiveEvaluationCycles();
-        setCycles(cycleResponse);
-      } catch (err: any) {
-        setSelectionError(err.message || 'Không thể tải dữ liệu chu kỳ hoặc thông tin người dùng');
-      } finally {
-        setIsSelectionLoading(false);
-      }
-    };
-    fetchInitialData();
-  }, []);
-
-  // Fetch forms and employees when cycle changes
-  useEffect(() => {
-    if (selectedCycle) {
-      const fetchData = async () => {
-        setIsSelectionLoading(true);
-        setSelectionError(null);
-        try {
-          const [formResponse, selectedCycleData] = await Promise.all([
-            criteriaFormService.getCriteriaFormsByEvaluationCycleId(selectedCycle),
-            evaluationCycleService.getEvaluationCycleById(selectedCycle),
-          ]);
-          setForms(formResponse);
-          setSelectedForm(null);
-          setSelectedEmployee(null);
-          setHasPermission(true);
-
-          if (selectedCycleData?.department?.departmentId) {
-            try {
-              const employeeResponse = await employeeService.getEmployeesByDepartment(
-                  selectedCycleData.department.departmentId
-              );
-              setEmployees(employeeResponse);
-              if (employeeResponse.length === 0) {
-                setSelectionError('Không có nhân viên nào trong phòng ban của chu kỳ này');
-              }
-            } catch (err: any) {
-              setSelectionError(err.message || 'Không thể tải danh sách nhân viên');
-            }
-          } else {
-            setEmployees([]);
-            setSelectionError('Chu kỳ này không được liên kết với phòng ban');
-          }
-        } catch (err: any) {
-          setSelectionError(err.message || 'Không thể tải biểu mẫu hoặc thông tin chu kỳ');
-        } finally {
-          setIsSelectionLoading(false);
-        }
-      };
-      fetchData();
-    } else {
-      setForms([]);
-      setEmployees([]);
-      setSelectedForm(null);
-      setSelectedEmployee(null);
-      setHasPermission(true);
-    }
-  }, [selectedCycle]);
 
   // Check permission when employee is selected
   useEffect(() => {
     if (selectedEmployee && assessor) {
-      const selectedEmployeeData = employees.find(emp => emp.code === selectedEmployee);
+      const selectedEmployeeData = employees.find((emp: EmployeeResponse) => emp.code === selectedEmployee);
       if (selectedEmployeeData) {
         const isSameDepartment = selectedEmployeeData.department.departmentName === assessor.departmentName;
         const isSelfEvaluation = selectedEmployeeData.code === assessor.id && assessor.role === 'EMPLOYEE';
@@ -156,20 +85,18 @@ const Evaluation: React.FC = () => {
     }
   }, [selectedEmployee, assessor, employees]);
 
-  // Fetch criteria/questions and existing assessment when form and employee are selected
+  // Fetch criteria/questions and existing assessment
   useEffect(() => {
     if (selectedForm && selectedEmployee && hasPermission) {
       const fetchData = async () => {
         setIsLoading(true);
         setError(null);
         try {
-          // Get form details to access evaluationCriteria
-          const form = forms.find(f => f.criteriaFormId === selectedForm);
+          const form = forms.find((f: CriteriaFormResponse) => f.criteriaFormId === selectedForm);
           if (!form || !form.evaluationCriteria) {
             throw new Error('Không tìm thấy biểu mẫu hoặc tiêu chí');
           }
 
-          // Fetch questions for each criterion
           const criteriaList: Criterion[] = await Promise.all(
               form.evaluationCriteria.map(async criterion => {
                 try {
@@ -201,15 +128,17 @@ const Evaluation: React.FC = () => {
 
           setCriteria(criteriaList);
 
-          // Fetch existing assessment
           try {
             const assessment = await evaluationService.getAssessmentByFormAndEmployeeId(
                 selectedForm,
                 selectedEmployee
             );
+            if (assessment.sentiment) {
+              setSentiment(assessment.sentiment as SentimentType);
+            }
             setCriteria(prev => {
               const updated = [...prev];
-              assessment.assessmentItems.forEach(item => {
+              assessment.assessmentItems.forEach((item: AssessmentItem) => {
                 updated.forEach(criterion => {
                   const targetItem = criterion.items.find(i => i.questionId === item.questionId);
                   if (targetItem) {
@@ -278,7 +207,6 @@ const Evaluation: React.FC = () => {
         employeeId: selectedEmployee,
         formId: selectedForm,
       };
-      console.log("request: " + request)
       await evaluationService.submitAssessment(request);
       toast.success('Đánh giá đã được lưu thành công!');
     } catch (err: any) {
@@ -289,92 +217,9 @@ const Evaluation: React.FC = () => {
     }
   };
 
-  // Render selection view if assessor is not loaded or selections are incomplete
-  if (!assessor || !selectedForm || !selectedEmployee) {
-    return (
-        <div className="mx-auto max-w-4xl rounded-lg bg-white p-6 shadow-md">
-          <h2 className="mb-4 text-2xl font-bold text-gray-900">Chọn thông tin đánh giá</h2>
-          {isSelectionLoading && (
-              <div className="flex items-center justify-center py-4">
-                <svg className="size-5 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                <span className="ml-2 text-sm text-gray-600">Đang tải...</span>
-              </div>
-          )}
-          {selectionError && <p className="text-sm text-red-500">{selectionError}</p>}
-          {!assessor && <p className="text-sm text-red-500">Vui lòng đăng nhập để tiếp tục</p>}
-
-          <div className="mb-4">
-            <label className="mb-2 block text-sm font-medium text-gray-700">Chu kỳ đánh giá *</label>
-            <select
-                value={selectedCycle || ''}
-                onChange={e => setSelectedCycle(Number(e.target.value) || null)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={!assessor}
-            >
-              <option value="">Chọn chu kỳ</option>
-              {cycles.map(cycle => (
-                  <option key={cycle.evaluationCycleId} value={cycle.evaluationCycleId}>
-                    {cycle.startDate} - {cycle.endDate} ({cycle.department?.departmentName || 'No Department'})
-                  </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-gray-500">Chọn chu kỳ đánh giá để xem các biểu mẫu và nhân viên</p>
-          </div>
-
-          <div className="mb-4">
-            <label className="mb-2 block text-sm font-medium text-gray-700">Biểu mẫu đánh giá *</label>
-            <select
-                value={selectedForm || ''}
-                onChange={e => setSelectedForm(Number(e.target.value) || null)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={!selectedCycle}
-            >
-              <option value="">Chọn biểu mẫu</option>
-              {forms.map(form => (
-                  <option key={form.criteriaFormId} value={form.criteriaFormId}>
-                    {form.criteriaFormName}
-                  </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-gray-500">Chọn biểu mẫu liên kết với chu kỳ</p>
-          </div>
-
-          <div className="mb-4">
-            <label className="mb-2 block text-sm font-medium text-gray-700">Nhân viên *</label>
-            <select
-                value={selectedEmployee || ''}
-                onChange={e => setSelectedEmployee(Number(e.target.value) || null)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={!selectedCycle || employees.length === 0}
-            >
-              <option value="">Chọn nhân viên</option>
-              {employees.map(emp => (
-                  <option key={emp.code} value={emp.code}>
-                    {emp.fullName}
-                  </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-gray-500">
-              {employees.length === 0 && selectedCycle
-                  ? 'Không có nhân viên nào trong phòng ban của chu kỳ này'
-                  : 'Chọn nhân viên để đánh giá'}
-            </p>
-          </div>
-        </div>
-    );
-  }
-
-  // Render evaluation view
-  const selectedEmployeeData = employees.find(emp => emp.code === selectedEmployee);
-  const selectedCycleData = cycles.find(cycle => cycle.evaluationCycleId === selectedCycle);
-  const selectedFormData = forms.find(form => form.criteriaFormId === selectedForm);
+  const selectedEmployeeData = employees.find((emp: EmployeeResponse) => emp.code === selectedEmployee);
+  const selectedCycleData = cycles.find((cycle: EvaluationCycleResponse) => cycle.evaluationCycleId === selectedCycle);
+  const selectedFormData = forms.find((form: CriteriaFormResponse) => form.criteriaFormId === selectedForm);
 
   return (
       <div className="rounded-lg bg-white p-6 shadow-md">
@@ -383,9 +228,7 @@ const Evaluation: React.FC = () => {
             <div className="mb-4 flex items-center md:mb-0">
               <img
                   className="size-10 rounded-full"
-                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                      selectedEmployeeData?.fullName || ''
-                  )}&background=random`}
+                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(selectedEmployeeData?.fullName || '')}&background=random`}
                   alt={selectedEmployeeData?.fullName}
               />
               <div className="ml-4">
@@ -395,13 +238,19 @@ const Evaluation: React.FC = () => {
                   <span className="mx-2">•</span>
                   <span>{selectedEmployeeData?.department.departmentName}</span>
                 </div>
+                {sentiment && (
+                    <div className="mt-2">
+                      <SentimentLabel sentiment={sentiment} />
+                    </div>
+                )}
               </div>
             </div>
             <div className="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-4 md:space-y-0">
               <div className="flex items-center">
                 <span className="mr-2 text-sm text-gray-500">Chu kỳ:</span>
-                <span
-                    className="text-sm font-medium text-gray-900">{selectedCycleData?.startDate} - {selectedCycleData?.endDate}</span>
+                <span className="text-sm font-medium text-gray-900">
+                {selectedCycleData?.startDate} - {selectedCycleData?.endDate}
+              </span>
               </div>
               <div className="flex items-center">
                 <span className="mr-2 text-sm text-gray-500">Biểu mẫu:</span>
@@ -409,7 +258,7 @@ const Evaluation: React.FC = () => {
               </div>
               <div className="flex items-center">
                 <span className="mr-2 text-sm text-gray-500">Người đánh giá:</span>
-                <span className="text-sm font-medium text-gray-900">{assessor.fullName}</span>
+                <span className="text-sm font-medium text-gray-900">{assessor?.fullName}</span>
               </div>
             </div>
           </div>
@@ -522,7 +371,6 @@ const Evaluation: React.FC = () => {
                                   </tr>
                               ))
                           )}
-                          {/* Dòng tổng điểm */}
                           <tr className="bg-gray-100 font-semibold text-gray-900">
                             <td className="px-6 py-4 text-right">Tổng điểm:</td>
                             <td className="px-6 py-4 text-center">
@@ -562,13 +410,7 @@ const Evaluation: React.FC = () => {
 
           <div className="flex justify-end space-x-3">
             <button
-                onClick={() => {
-                  setSelectedForm(null);
-                  setSelectedEmployee(null);
-                  setCriteria([]);
-                  setComments('');
-                  setHasPermission(true);
-                }}
+                onClick={() => navigate('/evaluation-selection')}
                 className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                 disabled={isLoading}
             >
@@ -581,8 +423,7 @@ const Evaluation: React.FC = () => {
             >
               {isLoading && (
                   <svg className="size-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                            strokeWidth="4"></circle>
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path
                         className="opacity-75"
                         fill="currentColor"
@@ -598,4 +439,4 @@ const Evaluation: React.FC = () => {
   );
 };
 
-export default Evaluation;
+export default EvaluationForm;

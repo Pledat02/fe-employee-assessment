@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { CriteriaFormResponse, CriteriaFormCreateRequest } from '../services/criteriaFormService';
 import { evaluationCriteriaService } from '../services/evaluationCriteriaService';
-import { evaluationCycleService } from '../services/evaluationCycleService'; // Hypothetical service for fetching cycles
+import {EvaluationCycleResponse, evaluationCycleService} from '../services/evaluationCycleService'; // Hypothetical service for fetching cycles
 
 interface CriteriaFormModalProps {
     isOpen: boolean;
@@ -29,7 +29,7 @@ const CriteriaFormModal: React.FC<CriteriaFormModalProps> = ({
         evaluationCriteriaIds: [],
     });
     const [availableCriteria, setAvailableCriteria] = useState<{ id: number; name: string }[]>([]);
-    const [availableCycles, setAvailableCycles] = useState<{ id: string; name: string }[]>([]);
+    const [availableCycles, setAvailableCycles] = useState<EvaluationCycleResponse>();
     const [selectedCriteriaIds, setSelectedCriteriaIds] = useState<number[]>([]);
 
     useEffect(() => {
@@ -37,8 +37,8 @@ const CriteriaFormModal: React.FC<CriteriaFormModalProps> = ({
             // Fetch evaluation cycles
             const fetchCycles = async () => {
                 try {
-                    const cycles = await evaluationCycleService.getAllEvaluationCycles(); // Hypothetical method
-                    setAvailableCycles(cycles.map(c => ({ id: String(c.evaluationCycleId), name: `${c.startDate} - ${c.endDate}` })));
+                    const cycle = await evaluationCycleService.getEvaluationCycleById(cycleId); // Hypothetical method
+                    setAvailableCycles(cycle);
                 } catch (error) {
                     toast.error('Không thể tải danh sách chu kỳ đánh giá');
                 }
@@ -105,11 +105,7 @@ const CriteriaFormModal: React.FC<CriteriaFormModalProps> = ({
             toast.error('Tên biểu mẫu phải có ít nhất 3 ký tự');
             return;
         }
-        if (!formData.evaluationCycleId.trim()) {
-            toast.error('Vui lòng chọn chu kỳ đánh giá');
-            return;
-        }
-        if (!availableCycles.some(cycle => cycle.id === formData.evaluationCycleId)) {
+        if (!availableCycles) {
             toast.error('Chu kỳ đánh giá không hợp lệ');
             return;
         }
@@ -120,7 +116,10 @@ const CriteriaFormModal: React.FC<CriteriaFormModalProps> = ({
 
         try {
             setLoading(true);
-            await onSave(formData);
+            await onSave({
+                ...formData,
+                evaluationCycleId: String(cycleId)
+            });
             onClose();
         } catch (error) {
             console.error('Save form error:', error);
@@ -170,12 +169,9 @@ const CriteriaFormModal: React.FC<CriteriaFormModalProps> = ({
                             className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                             required
                         >
-                            <option value="">Chọn chu kỳ</option>
-                            {availableCycles.map(cycle => (
-                                <option key={cycle.id} value={cycle.id}>
-                                    {cycle.name}
+                                <option key={cycleId} value={cycleId}>
+                                    {availableCycles?.startDate} - {availableCycles?.endDate} ({availableCycles?.department?.departmentName})
                                 </option>
-                            ))}
                         </select>
                         <p className="mt-1 text-xs text-gray-500">Chọn chu kỳ đánh giá liên kết với biểu mẫu</p>
                     </div>

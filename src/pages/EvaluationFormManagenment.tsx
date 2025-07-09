@@ -22,7 +22,7 @@ const CriteriaFormManagement: React.FC = () => {
     } = useCriteriaForm();
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [evaluationCycleId, setEvaluationCycleId] = useState('');
+    const [evaluationCycleId, setEvaluationCycleId] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
     const [deletingFormId, setDeletingFormId] = useState<number | null>(null);
     const [expandedForm, setExpandedForm] = useState<Set<number>>(new Set());
@@ -378,14 +378,14 @@ const CriteriaFormManagement: React.FC = () => {
                 <CriteriaFormModal
                     isOpen={showAddFormModal}
                     isEditMode={isEditMode}
-                    form={selectedForm}
                     onClose={() => {
                         setShowAddFormModal(false);
                         setSelectedForm(null);
                         setIsEditMode(false);
                     }}
                     onSave={handleSaveForm}
-                />
+                    criteriaForm={selectedForm}
+                    cycleId={evaluationCycleId}/>
             </div>
         </div>
     );

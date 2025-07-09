@@ -21,6 +21,7 @@ import './App.css';
 import employeesData from './data/employees.json';
 import EvaluationCycleManagement from "./pages/EvaluationCycleManagement";
 import CriteriaFormManagement from "./pages/EvaluationFormManagenment";
+import EvaluationSelection from "./pages/EvaluationSelection";
 
 
 // Types for legacy compatibility
@@ -133,7 +134,11 @@ const App: React.FC = () => {
                         <Evaluation />
                       </RoleBasedRoute>
                     } />
-
+                    <Route path="/evaluation-selection" element={
+                      <RoleBasedRoute allowedRoles={[ROLES.EMPLOYEE,ROLES.SUPERVISOR, ROLES.MANAGER]}>
+                        <EvaluationSelection />
+                      </RoleBasedRoute>
+                    } />
                     {/* SUPERVISOR + MANAGER - Thống kê */}
                     <Route path="/statistics" element={
                       <RoleBasedRoute allowedRoles={[ROLES.SUPERVISOR, ROLES.MANAGER]}>
