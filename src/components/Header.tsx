@@ -2,13 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-interface Tab {
+interface MenuItem {
   id: 'employees' | 'departments' | 'evaluation' | 'statistics' | 'cycles' | 'evaluation-form'|'criteria';
   label: string;
-  path: string; // Add path for navigation
+  path: string;
+  icon: string; // Add icon for sidebar
 }
 
-const Header: React.FC = () => {
+interface SidebarProps {
+  isCollapsed?: boolean;
+  onToggle?: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
@@ -29,22 +35,21 @@ const Header: React.FC = () => {
     };
   }, []);
 
-  const tabs: Tab[] = [
-    { id: 'employees', label: 'Quản lý nhân viên', path: '/' },
-    { id: 'departments', label: 'Quản lý phòng ban', path: '/departments' },
-    { id: 'cycles', label: 'Quản lý chu kì', path: '/cycles' },
-    { id: 'evaluation-form', label: 'Quản lý form', path: '/evaluation-form' },
-    { id: 'criteria', label: 'Tiêu chí & Câu hỏi', path: '/criteria' },
-    { id: 'evaluation', label: 'Đánh giá nhân viên', path: '/evaluation' },
-    { id: 'statistics', label: 'Thống kê đánh giá', path: '/statistics' },
-
+  const menuItems: MenuItem[] = [
+    { id: 'employees', label: 'Quản lý nhân viên', path: '/', icon: 'fas fa-users' },
+    { id: 'departments', label: 'Quản lý phòng ban', path: '/departments', icon: 'fas fa-building' },
+    { id: 'cycles', label: 'Quản lý chu kì', path: '/cycles', icon: 'fas fa-calendar-alt' },
+    { id: 'evaluation-form', label: 'Quản lý form', path: '/evaluation-form', icon: 'fas fa-file-alt' },
+    { id: 'criteria', label: 'Tiêu chí & Câu hỏi', path: '/criteria', icon: 'fas fa-list-check' },
+    { id: 'evaluation', label: 'Đánh giá nhân viên', path: '/evaluation', icon: 'fas fa-star' },
+    { id: 'statistics', label: 'Thống kê đánh giá', path: '/statistics', icon: 'fas fa-chart-bar' },
   ];
 
-  const getTabClassName = (tabPath: string) =>
-      `whitespace-nowrap cursor-pointer px-1 pb-2 border-b-2 font-medium text-sm ${
-          location.pathname === tabPath
-              ? 'border-blue-500 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+  const getMenuItemClassName = (itemPath: string) =>
+      `flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+          location.pathname === itemPath
+              ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-500'
+              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
       }`;
 
   const handleUserMenuClick = () => {
@@ -61,65 +66,93 @@ const Header: React.FC = () => {
   };
 
   return (
-      <header className="bg-white shadow-sm">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center">
-              <div className="shrink-0">
-                <span className="text-xl font-bold text-blue-600">HR Evaluation</span>
-              </div>
-              <nav className="ml-10 flex space-x-8" aria-label="Main navigation">
-                {tabs.map((tab) => (
-                    <button
-                        key={tab.id}
-                        onClick={() => navigate(tab.path)}
-                        className={getTabClassName(tab.path)}
-                        aria-current={location.pathname === tab.path ? 'page' : undefined}
-                    >
-                      {tab.label}
-                    </button>
-                ))}
-              </nav>
-            </div>
-            <div className="flex items-center">
-              <div className="relative" ref={menuRef}>
-                <button
-                  onClick={handleUserMenuClick}
-                  className="flex size-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  aria-label="Mở menu người dùng"
-                >
-                  <span className="sr-only">Mở menu người dùng</span>
-                  <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </button>
+    <div className={`bg-white shadow-lg transition-all duration-300 ${
+      isCollapsed ? 'w-16' : 'w-64'
+    } min-h-screen flex flex-col`}>
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        {!isCollapsed && (
+          <span className="text-xl font-bold text-blue-600">HR Evaluation</span>
+        )}
+        <button
+          onClick={onToggle}
+          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          aria-label="Toggle sidebar"
+        >
+          <i className={`fas ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'} text-gray-600`}></i>
+        </button>
+      </div>
 
-                {/* User Dropdown Menu */}
-                {showUserMenu && (
-                  <div className="absolute right-0 z-50 mt-2 w-48 rounded-md border border-gray-200 bg-white py-1 shadow-lg">
-                    <div className="border-b border-gray-100 px-4 py-2">
-                      <p className="text-sm font-medium text-gray-900">
-                        {user?.employee?.fullName || user?.username}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {user?.role} - {user?.employee?.departmentName}
-                      </p>
-                    </div>
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      <i className="fas fa-sign-out-alt mr-2"></i>
-                      Đăng xuất
-                    </button>
-                  </div>
-                )}
+      {/* Navigation */}
+      <nav className="flex-1 px-4 py-6 space-y-2" aria-label="Main navigation">
+        {menuItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => navigate(item.path)}
+            className={getMenuItemClassName(item.path)}
+            aria-current={location.pathname === item.path ? 'page' : undefined}
+            title={isCollapsed ? item.label : undefined}
+          >
+            <i className={`${item.icon} ${isCollapsed ? 'text-lg' : 'mr-3'}`}></i>
+            {!isCollapsed && <span>{item.label}</span>}
+          </button>
+        ))}
+      </nav>
+
+      {/* User Menu */}
+      <div className="border-t border-gray-200 p-4">
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={handleUserMenuClick}
+            className={`flex items-center w-full p-3 rounded-lg hover:bg-gray-100 transition-colors ${
+              isCollapsed ? 'justify-center' : 'justify-between'
+            }`}
+            aria-label="Mở menu người dùng"
+          >
+            <div className="flex items-center">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600">
+                <i className="fas fa-user text-sm"></i>
               </div>
+              {!isCollapsed && (
+                <div className="ml-3 text-left">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {user?.employee?.fullName || user?.username}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {user?.role}
+                  </p>
+                </div>
+              )}
             </div>
-          </div>
+            {!isCollapsed && (
+              <i className="fas fa-chevron-up text-gray-400 text-xs"></i>
+            )}
+          </button>
+
+          {/* User Dropdown Menu */}
+          {showUserMenu && (
+            <div className={`absolute ${isCollapsed ? 'left-16 bottom-0' : 'left-0 bottom-16'} z-50 w-48 rounded-md border border-gray-200 bg-white py-1 shadow-lg`}>
+              <div className="border-b border-gray-100 px-4 py-2">
+                <p className="text-sm font-medium text-gray-900">
+                  {user?.employee?.fullName || user?.username}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {user?.role} - {user?.employee?.departmentName}
+                </p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="flex items-center w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <i className="fas fa-sign-out-alt mr-2"></i>
+                Đăng xuất
+              </button>
+            </div>
+          )}
         </div>
-      </header>
+      </div>
+    </div>
   );
 };
 
-export default Header;
+export default Sidebar;

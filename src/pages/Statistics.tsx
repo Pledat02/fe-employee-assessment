@@ -179,13 +179,6 @@ const Statistics: React.FC = () => {
                                             </td>
                                             <td className="whitespace-nowrap px-6 py-4">
                                                 <div className="flex items-center">
-                                                    <div className="size-10 shrink-0">
-                                                        <img
-                                                            className="size-10 rounded-full object-cover"
-                                                            src={emp.avatarUrl || "https://via.placeholder.com/100"}
-                                                            alt={emp.fullName}
-                                                        />
-                                                    </div>
                                                     <div className="ml-4">
                                                         <div
                                                             className="text-sm font-medium text-gray-900">{emp.fullName}</div>

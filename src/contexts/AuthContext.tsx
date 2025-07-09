@@ -31,11 +31,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsLoading(true);
 
         // Check if user is already logged in
+        console.log('AuthContext: Checking authentication...');
         if (authService.isAuthenticated()) {
           const storedUser = authService.getUser();
+          console.log('AuthContext: Found stored user:', storedUser);
           if (storedUser) {
             setUser(storedUser);
           }
+        } else {
+          console.log('AuthContext: No authentication found');
         }
       } catch (error) {
         console.error('Auth initialization failed:', error);
@@ -75,13 +79,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async (): Promise<void> => {
     try {
       setIsLoading(true);
-      
-      await authService.logout();
+
+      // Clear user state immediately
       setUser(null);
-      
+
+      // Call logout API
+      await authService.logout();
+
       toast.info('Đã đăng xuất thành công');
     } catch (error) {
       console.error('Logout failed:', error);
+      // Even if API fails, still clear local data
+      setUser(null);
+      authService.clearAuthData();
       toast.error('Đăng xuất thất bại');
     } finally {
       setIsLoading(false);
