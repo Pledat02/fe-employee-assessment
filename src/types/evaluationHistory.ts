@@ -1,41 +1,58 @@
-﻿// Interface dựa trên SummaryAssessmentResponse với thêm các trường cho lịch sử
+﻿// Interface dựa trên API response
 export interface EvaluationHistoryItem {
-  // Từ SummaryAssessmentResponse
-  assessmentItems: AssessmentItem[];
-  assessorId: number;
-  comment?: string;
-  employeeId: number;
-  formId: number;
-  
-  // Thêm các trường cho lịch sử
   id: number;
+  employeeId: number;
   employeeName: string;
   departmentName: string;
+  formId: number;
   formName: string;
   cycleName: string;
   createdAt: string;
   updatedAt: string;
   status: 'COMPLETED' | 'IN_PROGRESS' | 'PENDING';
-  
+  comment?: string;
+
   // Thống kê điểm số
   averageScore: number;
   totalQuestions: number;
   completedQuestions: number;
-  
+
   // Sentiment analysis - nhãn đánh giá
   sentiment: 'EXCELLENT' | 'GOOD' | 'AVERAGE' | 'POOR';
-  sentimentLabel: string; // " Xuất sắc\, \Tốt\, \Trung bình\, \Tệ\
- sentimentColor: string; // Màu hiển thị
+  sentimentLabel: string;
+  sentimentColor: string;
+
+  // Chi tiết đánh giá
+  assessmentItems: AssessmentItem[];
 }
 
 export interface AssessmentItem {
- questionId: number;
- questionText?: string;
- criteriaName?: string;
- employeeScore: number;
- supervisorScore: number;
- managerScore: number;
- totalScore?: number;
+  questionId: number;
+  questionText?: string;
+  criteriaName?: string;
+  employeeScore: number;
+  supervisorScore: number;
+  managerScore: number;
+  totalScore?: number;
+}
+
+// Interface cho dữ liệu biểu đồ cột
+export interface CriteriaChartData {
+  criteriaName: string;
+  averageScore: number;
+  employeeScore: number;
+  supervisorScore: number;
+  managerScore: number;
+  color?: string;
+}
+
+// Interface cho thống kê chu kỳ
+export interface CycleStatistics {
+  cycleName: string;
+  totalEvaluations: number;
+  completedEvaluations: number;
+  averageScore: number;
+  criteriaData: CriteriaChartData[];
 }
 
 // Helper function để tính sentiment

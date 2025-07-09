@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -18,66 +18,11 @@ import EvaluationCriteriaManagement from './pages/EvaluationCriteriaManagement';
 import EvaluationHistory from './pages/EvaluationHistory';
 
 import './App.css';
-import employeesData from './data/employees.json';
 import EvaluationCycleManagement from "./pages/EvaluationCycleManagement";
 import CriteriaFormManagement from "./pages/EvaluationFormManagenment";
 import EvaluationSelection from "./pages/EvaluationSelection";
 
-
-// Types for legacy compatibility
-interface Employee {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  department: string;
-  position: string;
-  status: string;
-  avatar: string;
-}
-
-interface Department {
-  id: number;
-  name: string;
-}
-
-// Define interfaces
-interface Department {
-  id: number;
-  name: string;
-}
-
-interface Employee {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  department: string;
-  position: string;
-  status: string;
-  avatar: string;
-}
-
 const App: React.FC = () => {
-  // Temporarily use static data until we fully integrate the API
-  const [employees, setEmployees] = useState<Employee[]>(employeesData);
-  const totalEmployees = employees.length;
-
-  // Simplified state - không cần state này nữa vì EmployeeManagementNew tự quản lý
-
-  // Static departments for now - you can create a similar hook for departments
-  const [departments] = useState<Department[]>([
-    { id: 1, name: 'Phòng Công nghệ thông tin' },
-    { id: 2, name: 'Phòng Nhân sự' },
-    { id: 3, name: 'Phòng Kế toán' },
-    { id: 4, name: 'Phòng Marketing' },
-    { id: 5, name: 'Phòng Kinh doanh' },
-  ]);
-
-  // Xóa filteredEmployees vì không dùng nữa
-
-  // Xóa các handlers cũ vì đã có EmployeeManagementNew
-
   return (
     <AuthProvider>
       <BrowserRouter>
