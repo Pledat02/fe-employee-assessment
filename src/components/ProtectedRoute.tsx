@@ -1,5 +1,6 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -13,34 +14,26 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   fallbackPath = '/login',
 }) => {
   const location = useLocation();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
-  // Simple check using localStorage
-  const isAuthenticated = () => {
-    const token = localStorage.getItem('auth_token');
-    const userInfo = localStorage.getItem('user_info');
-    return !!(token && userInfo);
-  };
-
-  const getUser = () => {
-    const userStr = localStorage.getItem('user_info');
-    if (userStr) {
-      try {
-        return JSON.parse(userStr);
-      } catch (error) {
-        return null;
-      }
-    }
-    return null;
-  };
+  // Show loading spinner while checking auth
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   // Redirect to login if not authenticated
-  if (!isAuthenticated()) {
+  if (!isAuthenticated) {
     return <Navigate to={fallbackPath} state={{ from: location }} replace />;
   }
 
+
+
   // Check role-based access if required roles are specified
   if (requiredRoles.length > 0) {
-    const user = getUser();
     if (user) {
       const hasRequiredRole = requiredRoles.includes(user.role);
 

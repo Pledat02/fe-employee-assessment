@@ -115,7 +115,7 @@ class AuthService {
       console.error('Logout API call failed:', error);
     } finally {
       // Always clear local storage
-      this.clearAuthData();
+      this.clearAuthDataPrivate();
     }
   }
 
@@ -187,11 +187,18 @@ class AuthService {
   }
 
   /**
-   * Clear all auth data
+   * Clear all auth data (public method)
    */
-  private clearAuthData(): void {
+  clearAuthData(): void {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
+  }
+
+  /**
+   * Clear all auth data (private method)
+   */
+  private clearAuthDataPrivate(): void {
+    this.clearAuthData();
   }
 
   /**

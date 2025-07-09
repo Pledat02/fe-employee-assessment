@@ -1,24 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const hasRedirectedRef = useRef(false);
 
-  // Check if user is already logged in (only once on mount)
-  useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    const userInfo = localStorage.getItem('user_info');
+  // Check if user is already logged in (DISABLED to prevent redirect loop)
+  // useEffect(() => {
+  //   const token = localStorage.getItem('auth_token');
+  //   const userInfo = localStorage.getItem('user_info');
 
-    if (token && userInfo) {
-      console.log('User already logged in, redirecting...');
-      navigate('/', { replace: true });
+  //   if (token && userInfo) {
+  //     console.log('User already logged in, redirecting...');
+  //     try {
+  //       const user = JSON.parse(userInfo);
+  //       const defaultRoute = getDefaultRouteByRole(user.role);
+  //       navigate(defaultRoute, { replace: true });
+  //     } catch (error) {
+  //       console.error('Error parsing user info:', error);
+  //       localStorage.removeItem('auth_token');
+  //       localStorage.removeItem('user_info');
+  //     }
+  //   }
+  // }, []);
+
+
+
+  // Helper function để lấy route mặc định theo role
+  const getDefaultRouteByRole = (role: string): string => {
+    switch (role) {
+      case 'EMPLOYEE':
+        return '/evaluation';
+      case 'SUPERVISOR':
+        return '/cycles';
+      case 'MANAGER':
+        return '/';
+      default:
+        return '/evaluation';
     }
-  }, [navigate]); // Include navigate in dependency array
+  };
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
@@ -41,8 +67,10 @@ const Login: React.FC = () => {
 
       const data = await response.json();
       console.log('Login response:', data);
+      console.log('Response status:', response.status, response.ok);
 
       if (response.ok && data.code === 200) {
+        console.log('Login successful, processing...');
         // Save token and user info
         localStorage.setItem('auth_token', data.result.token);
         localStorage.setItem('user_info', JSON.stringify(data.result.userInfo));
@@ -51,9 +79,22 @@ const Login: React.FC = () => {
         const userName = data.result.userInfo.employee?.fullName || data.result.userInfo.username;
         toast.success(`Chào mừng ${userName}!`);
 
-        // Redirect to main page
+        // Redirect dựa trên role
+        const defaultRoute = getDefaultRouteByRole(data.result.userInfo.role);
+        console.log('Redirecting to:', defaultRoute, 'for role:', data.result.userInfo.role);
+        console.log('Current location:', window.location.pathname);
+
+        // Try immediate redirect first
+        console.log('Attempting immediate redirect...');
+        navigate(defaultRoute, { replace: true });
+
+        // Backup with timeout
         setTimeout(() => {
-          navigate('/', { replace: true });
+          console.log('Backup redirect executing...');
+          if (window.location.pathname === '/login') {
+            console.log('Still on login page, forcing redirect...');
+            window.location.replace(defaultRoute);
+          }
         }, 1000);
 
       } else {
